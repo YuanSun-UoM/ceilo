@@ -66,11 +66,12 @@ def ipf(allprf,z,t):
 	# obtenemos la longitud de s
 	isz=len(s)
 	#indices de z
-	z_i=np.arange(0,500,dtype=int)
+	niv = len(z)
+	z_i=np.arange(0,niv,dtype=int)
 	# indices de s
 	s_i=np.arange(0,isz)
 	# niveles a probar como posiblles zm
-	niv=500
+	#niv=500
 	# nivel minimo a partir donde se empieza a busar la altura.
 	niv_min=30
 
@@ -93,14 +94,18 @@ def ipf(allprf,z,t):
 				s_espesor[ij,k]=float(z[int(j+s[k])]-z[j]-1)
 				Bm[ij]=np.nanmean(prf[0:j])
 				Bu[ij,k]=np.nanmean(prf[j:j+s[k]])
-				B[z_i,ij,k]=(((Bm[ij]+Bu[ij,k])/2.)-((Bm[ij]-Bu[ij,k])/2.))*(erf(((z[z_i]-zm))/s_espesor[ij,k]))
+				#B[z_i,ij,k]=(((Bm[ij]+Bu[ij,k])/2.)-((Bm[ij]-Bu[ij,k])/2.))*(erf(((z[z_i]-zm))/s_espesor[ij,k]))
+				B[z_i,ij,k]=((Bm[ij]+Bu[ij,k])/2.-(Bm[ij]-Bu[ij,k])/2.*erf((z[z_i]-zm)/s_espesor[ij,k]))
 				rmsd[ij,k]=np.sqrt((1/float(niv))*(np.nansum(B[:,ij,k]-prf))**2)
 				if np.nanmin(rmsd[niv_min:-1,k])>np.nanmean(np.nonzero(rmsd)):
 					B[z_i,ij,k]=(((Bm[ij]+Bu[ij,k])/2.)-((Bm[ij]-Bu[ij,k])/2.))*(-erf(((z[z_i]-zm))/s_espesor[ij,k]))
-				rmsd[ij,k]=np.sqrt((np.nansum(B[s[k]:len(z_i)-s[k],ij,k]-prf[s[k]:len(z_i)-s[k]]-1)**2)/float(niv))
-			zk[i,k]=int(np.where(rmsd==np.nanmin(rmsd[:,k]))[0])+niv_min-1
+				#rmsd[ij,k]=np.sqrt((np.nansum(B[s[k]:len(z_i)-s[k],ij,k]-prf[s[k]:len(z_i)-s[k]]-1)**2)/float(niv))
+				rmsd[ij,k]= np.sqrt(np.nanmean((B[:,ij,k]-prf[:niv])**2))
+			#zk[i,k]=int(np.where(rmsd==np.nanmin(rmsd[:,k]))[0])+niv_min-1
+			zk[i,k]=np.nanargmin(rmsd[:,k])+niv_min-1
 		mlh[i]=z[zk[i,0]]
-		if np.nonzero(np.nanmin(rmsd[:,k]))>np.nanmean(np.nonzero(rmsd)):
-			mlh[i]=np.nan
+		#if np.nonzero(np.nanmin(rmsd[:,k]))>np.nanmean(np.nonzero(rmsd)):
+			#mlh[i]=np.nan
 		if mlh[i]<201 or mlh[i]>4300:
-			ml[i]=np.nan
+			mlh[i]=np.nan
+	return mlh			
