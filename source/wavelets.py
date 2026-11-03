@@ -130,17 +130,16 @@ def haarval(prf,a,b0):
     wnlen=a/2.
     fun=0
     # Loop through z. Assigning weight according to Haar.
-    for i,z0 in enumerate(z):
-    	if z0 < b0-wnlen or z0 == b0:
-    		continue
-    	elif z0 > b0+wnlen:
-    		break
-    	elif z0 >= b0-wnlen and z0 < b0:
-    		fun=fun+prf[i]
-    	elif z0 > b0 and z0 <= b0+wnlen:
-    		fun=fun-prf[i]
-
-    return fun/float(a)
+    for i, z0 in enumerate(z):
+        if z0 < b0 - wnlen or z0 == b0:
+            continue
+        elif z0 > b0 + wnlen:
+            break
+        elif z0 >= b0 - wnlen and z0 < b0:
+            fun = fun + prf[i]
+        elif z0 > b0 and z0 <= b0 + wnlen:
+            fun = fun - prf[i]
+    return fun / float(a)
 
 #######################################################################################################################
 ### Function findtops, finds recursively the top and bottom of the transition zone, and mlh by
@@ -182,37 +181,47 @@ def findtops(prf,wf,newmlh,a):
 
     """
     ### First round of coefficients to find top (c1) and bottom (c2) heights.
-    c1=0.6
-    c2=0.4
+    c1 = 0.6
+    c2 = 0.4
     global a0
-    bt=b
-    while a>a0:
-    	maxi=np.max(wf)
-    	imaxi=np.argmax(wf)
-    	#Top index retrieval
-    	topindex=0
-    	wf6=wf[imaxi]
-    	while wf6 > c1*maxi and imaxi+topindex != len(wf)-1:
-    		wf6=wf[imaxi+topindex]
-    		topindex+=1
-    	#Bottom index retrieval
-    	botindex=1
-    	wf4=wf[imaxi-botindex]
-    	while wf4 > c2*maxi and imaxi-botindex!=0:
-    		botindex+=1
-    		wf4=wf[imaxi-botindex]
-    	a=a-20
-    	if bt[imaxi+topindex-1]-bt[imaxi]<=a0 or bt[imaxi]-bt[imaxi-botindex]:
-    		break
-    	bt=bt[imaxi-botindex:imaxi+topindex]
-    	c1=c1-0.02
-    	c2=c2+0.02
-    	wf=[]
-    	### Find wavelet transform coefficients given current dilation.
-    	for n,b0 in enumerate(bt):
-    		covtransform=haarval(prf,a,b0)
-    		wf.append(covtransform)
-    return bt[imaxi-botindex],bt[imaxi],bt[imaxi+topindex-1]
+    global b
+
+    bt = b
+
+    while a > a0:
+        maxi = np.max(wf)
+        imaxi = np.argmax(wf)
+        # Avoid boundary maxima
+        if imaxi == 0 or imaxi == len(wf) - 1:
+            return np.nan, np.nan, np.nan
+        # Top index retrieval
+        topindex = 0
+        wf6 = wf[imaxi]
+        while wf6 > c1 * maxi and imaxi + topindex != len(wf) - 1:
+            wf6 = wf[imaxi + topindex]
+            topindex += 1
+        # Bottom index retrieval
+        botindex = 1
+        wf4 = wf[imaxi - botindex]
+        while wf4 > c2 * maxi and imaxi - botindex != 0:
+            botindex += 1
+            wf4 = wf[imaxi - botindex]
+        a = a - 20
+        # Stop when the transition region becomes sufficiently narrow
+        if (
+            bt[imaxi + topindex - 1] - bt[imaxi] <= a0
+            or bt[imaxi] - bt[imaxi - botindex] <= a0
+        ):
+            break
+        bt = bt[imaxi - botindex:imaxi + topindex]
+        c1 = c1 - 0.02
+        c2 = c2 + 0.02
+        wf = []
+        # Find wavelet transform coefficients at the current dilation
+        for n, b0 in enumerate(bt):
+            covtransform = haarval(prf, a, b0)
+            wf.append(covtransform)
+    return bt[imaxi - botindex], bt[imaxi], bt[imaxi + topindex - 1]
 ####################################################################################
 ### firstmlh: function to obtain first approximation to mlh given the first dilation observed.
 ### It is written to avoid ceiling or floor mlh values being floor = 200 and top =3000.
@@ -246,28 +255,34 @@ def firstmlh(prf,a,bottom):
     findtops, haarcovtransfm, haarval
 
     """
-    index=0
-    newmlh=bottom
+    index = 0
+    newmlh = bottom
     global b
     global top
-    top=top-50
-    #Loop until newmlh is not current bottomo or top
-    while newmlh<=bottom+50 or newmlh >= top-50:
-    	wf=[]
-    	if newmlh>=top-50:
-    		top=top-20
-    	elif newmlh<=bottom+50:
-    		bottom=bottom+20
-    	index+=1
-    	b=range(bottom,top,fi)
-    	for n,b0 in enumerate(b):
-    		covtransform=haarval(prf,a,b0)
-    		wf.append(covtransform)
-    	wf=np.asarray(wf)
-    	try:
-    		newmlh=b[np.argmax(wf)]
-    	except:
-    		break
-    #		print newmlh
-    #print bottom,top,newmlh
-    return newmlh,wf
+
+    top = top - 50
+    wf = np.array([])
+    # Loop until newmlh is not at the bottom or top
+    while (
+        (newmlh <= bottom + 50 or newmlh >= top - 50)
+        and index < 50
+        and top > bottom + fi
+    ):
+        wf = []
+        if newmlh >= top - 50:
+            top = top - 20
+        elif newmlh <= bottom + 50:
+            bottom = bottom + 20
+        index += 1
+        b = range(bottom, top, fi)
+        for n, b0 in enumerate(b):
+            covtransform = haarval(prf, a, b0)
+            wf.append(covtransform)
+        wf = np.asarray(wf)
+        try:
+            newmlh = b[np.argmax(wf)]
+        except ValueError:
+            newmlh = np.nan
+            break
+
+    return newmlh, wf
