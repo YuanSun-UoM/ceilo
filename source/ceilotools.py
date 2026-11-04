@@ -354,19 +354,18 @@ def insrtmatrxrnd(filename,t,trthval):
 			break
 	return height
 ###########################################################################################################
-def addtovecrnd(filename,tvec):
-	data= np.genfromtxt(filename,skip_header=4)
-	time = data[:,0]
-	mlh = data[:,1]
-	for i,tt in enumerate(time):
-		if tt > 23.3:
-			base=2.0/6.0
-		else:
-			base=1.0/6.0
-		if myround(tt,base) not in tvec:
-	 		tvec.append(myround(tt,base))
-
-	return tvec
+def addtovecnd(filename, tvec):
+    data = np.genfromtxt(filename, skip_header=4)
+    time = data[:, 0]
+    mlh = data[:, 1]
+    for i, tt in enumerate(time):
+        if tt > 23.3:
+            base = 2.0 / 6.0
+        else:
+            base = 1.0 / 6.0
+        if myround(tt, base) not in tvec:
+            tvec.append(myround(tt, base))
+    return tvec
 ###########################################################################################################
 def myround(x, base):
     return base * round(float(x) / base)
@@ -641,7 +640,6 @@ def readprofile(fl,tim):
 
 	#print perfil
 	try:
-
 		return perfil
 	except:
 		pass
