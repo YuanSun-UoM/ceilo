@@ -206,6 +206,7 @@ def findtops(prf,wf,newmlh,a):
         while wf4 > c2 * maxi and imaxi - botindex != 0:
             botindex += 1
             wf4 = wf[imaxi - botindex]
+        
         a = a - 20
         # Stop when the transition region becomes sufficiently narrow
         if (
@@ -221,7 +222,17 @@ def findtops(prf,wf,newmlh,a):
         for n, b0 in enumerate(bt):
             covtransform = haarval(prf, a, b0)
             wf.append(covtransform)
-    return bt[imaxi - botindex], bt[imaxi], bt[imaxi + topindex - 1]
+    # Check indices after the recursive loop
+    bottom_idx = imaxi - botindex
+    middle_idx = imaxi
+    top_idx = imaxi + topindex - 1
+    if not (
+        0 <= bottom_idx < len(bt)
+        and 0 <= middle_idx < len(bt)
+        and 0 <= top_idx < len(bt)
+    ):
+        return np.nan, np.nan, np.nan
+    return bt[bottom_idx], bt[middle_idx], bt[top_idx]
 ####################################################################################
 ### firstmlh: function to obtain first approximation to mlh given the first dilation observed.
 ### It is written to avoid ceiling or floor mlh values being floor = 200 and top =3000.
